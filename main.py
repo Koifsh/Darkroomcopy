@@ -13,21 +13,54 @@ global window
 class Screen(QMainWindow):
     def start(self):
         super().__init__()
-        self.setGeometry(300,300,300,300)
+        self.setGeometry(300,300,600,600)
         self.setWindowTitle("DONT LET THE COLD GET TO YOU")
-        self.stokefire = Button(6,"Stoke Fire", (0,30))
-        self.inventory = Button(0,"Inventory", (0,60))
-        self.getwood = Button(10,"Get Wood", (0,90))
+        self.setStyleSheet("background: #161219;")
+        self.widgets = {"play": Button(0,"Play",(200,200)).butt,
+                       "title": QLabel(self)
+                     }
+        self.widgets["title"].setPixmap(QPixmap('image.png'))
+        self.widgets["title"].setFixedSize(600,200)
+        self.widgets["title"].move(100,0)
+        self.show()
+        self.clearscreen()
+        self.mainscreen()
+    
+    def mainscreen(self):
         self.warmth = 100
-        self.warmthmeter = QLabel(f"Warm: {self.warmth}",self)
+        self.widgets = {"warmthmeter" : QLabel(f"Warm: {self.warmth}",self),
+                        "stoke fire" : Button(6,"Stoke Fire", (0,20)).butt,
+                        "inventory" : Button(0,"Inventory", (0,120)).butt,
+                        "getwood" : Button(6,"Get Wood", (0,230)).butt}
+        
+        self.widgets["warmthmeter"].setStyleSheet(
+                   '''
+            *{
+            color: white;
+            font-family: 'shanti';
+            font-size: 10px;
+            border-radius: 40px;
+            padding: 15px 0;
+            margin-top: 20px}
+            '''
+        )
         self.show()
         self.main()
     
+    def clearscreen(self):
+        dictionary = self.widgets.items()
+        for key, value in dictionary:
+            value.hide()
+        self.widgets = {}
+
+        
+        
+        
     def coldness(self):
         while self.warmth > 0:
             self.warmth -= 2
             time.sleep(1)
-            self.warmthmeter.setText(f"Warm: {self.warmth}")
+            self.widgets["warmthmeter"].setText(f"Warm: {self.warmth}")
         self.close()
 
     def main(self):
@@ -44,24 +77,53 @@ class InventoryScreen(QWidget):
 #the first tuple of (key,value) defines the variables to return, the second assigns them to the key and value in said dictionary
         for key,value in inventory.items(): 
             win.addWidget(QLabel(f"{key}:{value}"))
-        self.setLayout(win)
-        self.setWindowTitle("Inventory")
-        self.setGeometry(300,300,300,300)
-        self.show()
 
-
+class Text:
+    def __init__(self, text,pos,size):
+        self.label = QLabel(text,window)
+        self.label.move(*pos)
+        self.label.setStyleSheet(
+            "*{"+
+            f'''color: white;
+            font-family: 'shanti';
+            font-size: {size}px;
+            border-radius: 40px;
+            padding: 15px 0;
+            margin-top: 20px'''
+            +"}")
+        self.label.setFixedSize(size*4,size*4)
+            
+            
 class Button:
-    def __init__(self, cooldown, text, pos):
+    def __init__(self, cooldown, text,pos):
         self.butt = QPushButton(text,window)
-        self.butt.move(*pos)
         self.text = text
-        self.pos = pos
+        self.butt.move(*pos)
         self.cooldown = self.orgcooldown= cooldown
         self.butt.clicked.connect(self.clicked)
         self.cooldownstate = True
+        self.butt.setFixedSize(200,100)
+        self.butt.setStyleSheet(
+        #setting variable margins
+        '''
+        *{border: 4px solid '#BC006C';
+        color: white;
+        font-family: 'shanti';
+        font-size: 15px;
+        border-radius: 40px;
+        padding: 15px 0;
+        margin-top: 20px}
+        *:hover{
+            background: '#BC006C'
+        }
+        '''
+        )
+        self.butt.setCursor(QCursor(Qt.PointingHandCursor))
+        
 
     def clicked(self):
         if self.cooldownstate:
+            print("Hi")
             match self.text:
                 case "Stoke Fire":
                     if inventory["wood"] > 0:
@@ -83,6 +145,11 @@ class Button:
                 case "Get Wood":
                     inventory["wood"] += 1
  
+                case "Play":
+                    print("hi")
+                    window.clearscreen()
+                    window.mainscreen()
+                    
             Thread(target=self.timer,daemon=True).start()
 
     def timer(self):
