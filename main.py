@@ -12,19 +12,13 @@ global window
 
 class Screen(QMainWindow):
     def start(self):
-        super().__init__()
+        super(Screen,self).__init__()
         self.setGeometry(300,300,600,600)
         self.setWindowTitle("DONT LET THE COLD GET TO YOU")
         self.setStyleSheet("background: #161219;")
-        self.widgets = {"play": Button(0,"Play",(200,200)).butt,
-                       "title": QLabel(self)
-                     }
-        self.widgets["title"].setPixmap(QPixmap('image.png'))
-        self.widgets["title"].setFixedSize(600,200)
-        self.widgets["title"].move(100,0)
+        self.widgets = {"play": Button(0,"Play",(200,200)).butt}
+
         self.show()
-        self.clearscreen()
-        self.mainscreen()
     
     def mainscreen(self):
         self.warmth = 100
@@ -32,7 +26,7 @@ class Screen(QMainWindow):
                         "stoke fire" : Button(6,"Stoke Fire", (0,20)).butt,
                         "inventory" : Button(0,"Inventory", (0,120)).butt,
                         "getwood" : Button(6,"Get Wood", (0,230)).butt}
-        
+    
         self.widgets["warmthmeter"].setStyleSheet(
                    '''
             *{
@@ -48,13 +42,9 @@ class Screen(QMainWindow):
         self.main()
     
     def clearscreen(self):
-        dictionary = self.widgets.items()
-        for key, value in dictionary:
+        for key, value in self.widgets.items():
             value.hide()
         self.widgets = {}
-
-        
-        
         
     def coldness(self):
         while self.warmth > 0:
@@ -66,6 +56,7 @@ class Screen(QMainWindow):
     def main(self):
         Thread(target=self.coldness,daemon=True).start()
 
+    
 
 app = QApplication(sys.argv)
 window = Screen()
@@ -73,7 +64,6 @@ class InventoryScreen(QWidget):
     def __init__(self):
         super().__init__()
         win = QVBoxLayout()
-
 #the first tuple of (key,value) defines the variables to return, the second assigns them to the key and value in said dictionary
         for key,value in inventory.items(): 
             win.addWidget(QLabel(f"{key}:{value}"))
@@ -94,13 +84,13 @@ class Text:
         self.label.setFixedSize(size*4,size*4)
             
             
-class Button:
+class Button():
     def __init__(self, cooldown, text,pos):
         self.butt = QPushButton(text,window)
+        
         self.text = text
         self.butt.move(*pos)
         self.cooldown = self.orgcooldown= cooldown
-        self.butt.clicked.connect(self.clicked)
         self.cooldownstate = True
         self.butt.setFixedSize(200,100)
         self.butt.setStyleSheet(
@@ -118,12 +108,12 @@ class Button:
         }
         '''
         )
-        self.butt.setCursor(QCursor(Qt.PointingHandCursor))
         
-
+        self.butt.setCursor(QCursor(Qt.PointingHandCursor))
+        self.butt.clicked.connect(self.clicked)
+    
     def clicked(self):
         if self.cooldownstate:
-            print("Hi")
             match self.text:
                 case "Stoke Fire":
                     if inventory["wood"] > 0:
@@ -144,9 +134,8 @@ class Button:
 
                 case "Get Wood":
                     inventory["wood"] += 1
- 
+
                 case "Play":
-                    print("hi")
                     window.clearscreen()
                     window.mainscreen()
                     
