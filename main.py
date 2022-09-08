@@ -1,22 +1,22 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import sys
-import time
+import sys,os,time,csv
 from threading import Thread
-import csv
 
 inventory = {"gold":0,"wood":0}
 
 class Screen(QMainWindow):
     def __init__(self):
         super(Screen,self).__init__()
+        self.mainscreenran = False
         self.setGeometry(300,300,600,600)
         self.setWindowTitle("DONT LET THE COLD GET TO YOU")
         self.setStyleSheet("background: #161219;")
+        self.warmth = 100
         self.widgets = {
             "title": QLabel(self),
-            "play": Button(0,"Play",(200,200),self)}
+            "play": Button(self,0,"Play",(200,200))}
 
         self.widgets["title"].setPixmap(QPixmap("image.png"))
         self.widgets["title"].setFixedSize(450,200)
@@ -24,66 +24,90 @@ class Screen(QMainWindow):
         self.show()
     
     def mainscreen(self):
-        self.warmth = 100
-        self.widgets = {"warmthmeter" : QLabel(f"Warm: {self.warmth}",self),
-                        "stoke fire" : Button(6,"Stoke Fire", (0,20),self),
-                        "inventory" : Button(0,"Inventory", (0,120),self),
-                        "getwood" : Button(6,"Get Wood", (0,230),self)}
-    
-        self.widgets["warmthmeter"].setStyleSheet(
-                   '''
-            *{
-            color: white;
-            font-family: 'shanti';
-            font-size: 10px;
-            border-radius: 40px;
-            padding: 15px 0;
-            margin-top: 20px}
-            '''
-        )
-        for key,value in self.widgets.items():
+        self.reset = False
+        self.widgets = {
+                        
+                        "warmthmeter": Progressbar(self, (200,10),"Warmth"),
+                        "stoke fire" : Button(self,6,"Stoke Fire", (200,60)),
+                        "inventory" : Button(self,0,"Inventory", (200,140)),
+                        "getwood" : Button(self,10,"Get Wood", (200,220))}
+
+
+
+        for value in self.widgets.values():
             value.show()
-
-        self.show()
-        self.main()
-    
-    def clearscreen(self):
-        for key, value in self.widgets.items():
-            value.hide()
-        self.widgets = {}
         
-    def coldness(self):
-        while self.warmth > 0:
-            self.warmth -= 2
-            time.sleep(1)
-            self.widgets["warmthmeter"].setText(f"Warm: {self.warmth}")
-        self.close()
+        if not self.mainscreenran:
+            self.mainloop()
+        
+        self.mainscreenran = True
+        self.show()
 
-    def main(self):
-        Thread(target=self.coldness,daemon=True).start()
-    
+    def clearscreen(self,exceptions=[],remove = True):
+        if remove:
+            tempwidgets = dict(self.widgets)
+            for key,value in self.widgets.items():
+                if exceptions != [] and value in exceptions:
+                    continue
+                value.hide()
+                del tempwidgets[key]
+                
+            self.widgets = tempwidgets
+        else:
+            for value in self.widgets.values():
+                value.hide()
+                
+            
+    def mainloop(self):
+        self.widgets["warmthmeter"].setValue(self.warmth)
+        self.widgets["warmthmeter"].timer.start()
+            
+
     def inventoryscreen(self):
+        self.clearscreen(remove=False)
+        self.widgets["warmthmeter"].hide()
+        self.widgets["back"] = Button(self,0,"Back",(10,10))
+        self.widgets["back"].show()
+        count = 0
         for key,value in inventory.items():
-            self.widgets[key] = 
+            count += 1
+            self.widgets[key] = Text(self,f"{key} : {value}",(10,100+25*count),10)
+            self.widgets[key].show()
 
+class Progressbar(QProgressBar):
+    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
+        super().__init__(window)
+        self.win = window
+        self.setMinimum(min)
+        self.setMaximum(max)
+        self.move(*pos)
+        self.setFixedSize(200,30)
+        self.setFormat(text)
+        self.setStyleSheet("QProgressBar {"
+                           f"background-color: {backgroundcolor};"
+                           "color: white;"
+                           "border-color: orange;"
+                           "border-radius: 2px;"
+                           "text-align: center; }"
 
-
-    
-
-
-
-class InventoryScreen(QWidget):
-    def __init__(self):
-        super().__init__()
-        win = QVBoxLayout()
-        for key,value in inventory.items(): 
-            win.addWidget(QLabel(f"{key}:{value}"))
-
+                           "QProgressBar::chunk {"
+                           "border-radius: 2px;"
+                           f"background-color: {barcolor};"+"}")
+        
+        self.timer = QTimer()
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.counter)
+        
+    def counter(self):
+        self.win.warmth -= 2
+        print(self.win.warmth)
+        self.win.widgets["warmthmeter"].setValue(self.win.warmth)
+        
 class Text(QLabel):
-    def __init__(self, text,pos,size):
-        self.label = QLabel(text,window)
-        self.label.move(*pos)
-        self.label.setStyleSheet(
+    def __init__(self,window, text,pos,size):
+        super().__init__(text,window)
+        self.move(*pos)
+        self.setStyleSheet(
             "*{"+
             f'''color: white;
             font-family: 'shanti';
@@ -92,39 +116,40 @@ class Text(QLabel):
             padding: 15px 0;
             margin-top: 20px'''
             +"}")
-        self.label.setFixedSize(size*4,size*4)
-            
-            
+        self.setFixedSize(size*25,size+23)         
 class Button(QPushButton):
-    def __init__(self, cooldown, text,pos,window):
+    def __init__(self,window, cooldown, text,pos,size = (200,70)):
         super().__init__(text,window)
         self.win = window
         self.texte = text
         self.move(*pos)
         self.cooldown = self.orgcooldown= cooldown
-        self.cooldownstate = True
-        self.setFixedSize(200,100)
+        self.cooldownstate = False
+        self.setFixedSize(*size)
         self.setStyleSheet(
         #setting variable margins
         '''
-        *{border: 4px solid '#BC006C';
+        QPushButton {
+        border: 4px solid #737373;
         color: white;
-        font-family: 'shanti';
+        font-family: shanti;
         font-size: 15px;
-        border-radius: 40px;
+        border-radius: 4px;
         padding: 15px 0;
-        margin-top: 20px}
-        *:hover{
-            background: '#BC006C'
-        }
-        '''
-        )
+        margin-top: 0px}
         
+        QPushButton::hover{
+            background: #737373;
+        }
+        ''')
+        self.qtimer = QTimer()
+        self.qtimer.setInterval(1000)
+        self.qtimer.timeout.connect(self.timer)
         self.setCursor(QCursor(Qt.PointingHandCursor))
         self.clicked.connect(self.clicker)
 
     def clicker(self):
-        if self.cooldownstate:
+        if  not self.cooldownstate:
             match self.texte:
                 case "Stoke Fire":
                     if inventory["wood"] > 0:
@@ -150,20 +175,26 @@ class Button(QPushButton):
                     self.win.clearscreen()
                     self.win.mainscreen()
                     
-            Thread(target=self.timer,daemon=True).start()
-
+                case "Back":
+                    self.win.clearscreen([self.win.widgets["warmthmeter"],self.win.widgets["stoke fire"],self.win.widgets["getwood"]])
+                    self.win.mainscreen()
+                    
+            if self.cooldown > 0:
+                self.setText(str(self.cooldown))
+                self.qtimer.start()
 
     def timer(self):
-        self.cooldownstate = False
-        while self.cooldown > 0:
-            self.setText(f"{self.cooldown}")
-            time.sleep(1)
-            self.cooldown -= 1
         self.cooldownstate = True
-        self.setText(self.texte)
-        self.cooldown = self.orgcooldown
+        self.cooldown -= 1
+        self.setText(str(self.cooldown))
+        print(self.cooldown)
+        if self.cooldown == 0:
+            self.cooldown = self.orgcooldown
+            self.setText(self.texte)
+            self.qtimer.stop()
 
 if __name__ == "__main__":
+    
     app = QApplication(sys.argv)
     screen = Screen()
     sys.exit(app.exec_())
