@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import sys,os,time,csv
+import sys,time,csv
 from threading import Thread
 
 inventory = {"gold":0,"wood":0}
@@ -25,23 +25,43 @@ class Screen(QMainWindow):
     
     def mainscreen(self):
         self.reset = False
-        self.widgets = {
-                        
-                        "warmthmeter": Progressbar(self, (200,10),"Warmth"),
-                        "stoke fire" : Button(self,6,"Stoke Fire", (200,60)),
-                        "inventory" : Button(self,0,"Inventory", (200,140)),
-                        "getwood" : Button(self,10,"Get Wood", (200,220))}
+        if not self.mainscreenran:
+            self.widgets = {
+                            
+                            "warmthmeter": Progressbar(self, (200,10),"Warmth"),
+                            "stoke fire" : Button(self,6,"Stoke Fire", (200,60)),
+                            "getwood" : Button(self,10,"Get Wood", (200,140)),
+                            "inventory" : Button(self,0,"Inventory", (200,220)),
+                            "shop": Button(self,0,"Shop",(200,300))
+                            }
+            
+            self.widglist = [value for value in self.widgets.values()]
 
-
-
+        
         for value in self.widgets.values():
             value.show()
-        
+
         if not self.mainscreenran:
             self.mainloop()
         
         self.mainscreenran = True
         self.show()
+
+    def inventoryscreen(self):
+        self.clearscreen(remove=False)
+        self.widgets["back"] = Button(self,0,"Back",(10,10))
+        self.widgets["back"].show()
+        count = 0
+        for key,value in inventory.items():
+            count += 1
+            self.widgets[key] = Text(self,f"{key} : {value}",(150,50+25*count),10)
+            self.widgets[key].show()
+
+    def shopscreen(self):
+        self.clearscreen(remove=False)
+        self.widgets["back"] = Button(self,0,"Back",(10,10))
+        self.widgets["back"].show()
+
 
     def clearscreen(self,exceptions=[],remove = True):
         if remove:
@@ -63,16 +83,7 @@ class Screen(QMainWindow):
         self.widgets["warmthmeter"].timer.start()
             
 
-    def inventoryscreen(self):
-        self.clearscreen(remove=False)
-        self.widgets["warmthmeter"].hide()
-        self.widgets["back"] = Button(self,0,"Back",(10,10))
-        self.widgets["back"].show()
-        count = 0
-        for key,value in inventory.items():
-            count += 1
-            self.widgets[key] = Text(self,f"{key} : {value}",(10,100+25*count),10)
-            self.widgets[key].show()
+
 
 class Progressbar(QProgressBar):
     def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
@@ -101,12 +112,16 @@ class Progressbar(QProgressBar):
     def counter(self):
         self.win.warmth -= 2
         print(self.win.warmth)
-        self.win.widgets["warmthmeter"].setValue(self.win.warmth)
-        
+        self.setValue(self.win.warmth)
+        self.update()
+        if self.win.warmth == 0:
+            self.win.close()
+
 class Text(QLabel):
     def __init__(self,window, text,pos,size):
         super().__init__(text,window)
         self.move(*pos)
+        self.setAlignment(Qt.AlignCenter)
         self.setStyleSheet(
             "*{"+
             f'''color: white;
@@ -116,7 +131,8 @@ class Text(QLabel):
             padding: 15px 0;
             margin-top: 20px'''
             +"}")
-        self.setFixedSize(size*25,size+23)         
+        self.setFixedSize(size*25,size+23)    
+             
 class Button(QPushButton):
     def __init__(self,window, cooldown, text,pos,size = (200,70)):
         super().__init__(text,window)
@@ -176,9 +192,11 @@ class Button(QPushButton):
                     self.win.mainscreen()
                     
                 case "Back":
-                    self.win.clearscreen([self.win.widgets["warmthmeter"],self.win.widgets["stoke fire"],self.win.widgets["getwood"]])
+                    self.win.clearscreen(self.win.widglist)
                     self.win.mainscreen()
                     
+                case "Shop":
+                    self.win.shopscreen()
             if self.cooldown > 0:
                 self.setText(str(self.cooldown))
                 self.qtimer.start()
@@ -192,6 +210,7 @@ class Button(QPushButton):
             self.cooldown = self.orgcooldown
             self.setText(self.texte)
             self.qtimer.stop()
+            self.cooldownstate = False
 
 if __name__ == "__main__":
     
