@@ -63,6 +63,7 @@ class Screen(QMainWindow):
         self.widgets["back"].show()
 
 
+
     def clearscreen(self,exceptions=[],remove = True):
         if remove:
             tempwidgets = dict(self.widgets)
@@ -111,7 +112,6 @@ class Progressbar(QProgressBar):
         
     def counter(self):
         self.win.warmth -= 2
-        print(self.win.warmth)
         self.setValue(self.win.warmth)
         self.update()
         if self.win.warmth == 0:
@@ -197,6 +197,7 @@ class Button(QPushButton):
                     
                 case "Shop":
                     self.win.shopscreen()
+
             if self.cooldown > 0:
                 self.setText(str(self.cooldown))
                 self.qtimer.start()
@@ -205,7 +206,6 @@ class Button(QPushButton):
         self.cooldownstate = True
         self.cooldown -= 1
         self.setText(str(self.cooldown))
-        print(self.cooldown)
         if self.cooldown == 0:
             self.cooldown = self.orgcooldown
             self.setText(self.texte)
