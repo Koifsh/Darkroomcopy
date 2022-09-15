@@ -60,7 +60,10 @@ class Screen(QMainWindow):
     def shopscreen(self):
         self.clearscreen(remove=False)
         self.widgets["back"] = Button(self,0,"Back",(10,10))
-        self.widgets["back"].show()
+        self.widgets["sell"] = Button(self,0,"Sell Wood",(10,520))
+        for widget in ["back","sell"]:
+            self.widgets[widget].show()
+
 
 
 
