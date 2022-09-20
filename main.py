@@ -3,6 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import sys,time,csv
 from threading import Thread
+from functools import partial
 
 inventory = {"gold":0,"wood":0}
 
@@ -61,9 +62,11 @@ class Screen(QMainWindow):
         self.clearscreen(remove=False)
         self.widgets["back"] = Button(self,0,"Back",(10,10))
         self.widgets["sell"] = Button(self,0,"Sell Wood",(10,520))
+        self.widgets["basic axe"] = Button(self,0,"Basic Axe",(200,100))
         for widget in ["back","sell"]:
             self.widgets[widget].show()
-
+        if inventory["gold"] >= 5:
+            self.widgets["basic axe"].show()
 
 
 
@@ -163,9 +166,9 @@ class Button(QPushButton):
         ''')
         self.qtimer = QTimer()
         self.qtimer.setInterval(1000)
-        self.qtimer.timeout.connect(self.timer)
         self.setCursor(QCursor(Qt.PointingHandCursor))
         self.clicked.connect(self.clicker)
+        self.qtimer.timeout.connect(self.timer)
 
     def clicker(self):
         if  not self.cooldownstate:
@@ -176,11 +179,12 @@ class Button(QPushButton):
                         self.win.warmth = 100
                     else:
                         def nowood():
-                            self.cooldownstate = False
+                            self.cooldownstate = True
                             self.setText("not enough wood")
                             time.sleep(1)
                             self.setText("Stoke Fire")
-                            self.cooldownstate = True
+                            self.cooldownstate = False
+                            
                         Thread(target=nowood, daemon = True).start()
                         return
 
@@ -189,6 +193,8 @@ class Button(QPushButton):
 
                 case "Get Wood":
                     inventory["wood"] += 1
+                    if "basic axe" in inventory:
+                        self.cooldown,self.orgcooldown = 6,6
 
                 case "Play":
                     self.win.clearscreen()
@@ -200,11 +206,52 @@ class Button(QPushButton):
                     
                 case "Shop":
                     self.win.shopscreen()
+                
+                case "Sell Wood":
+                    if inventory["wood"] > 0:
+                        inventory["wood"] -= 1
+                        inventory["gold"] += 1
+                        def gold():
+                            self.cooldownstate = True
+                            self.setText("gold +1")
+                            time.sleep(0.5)
+                            self.setText("Sell Wood")
+                            self.cooldownstate = False
+                        Thread(target=gold, daemon = True).start()
+                        return
+                    else:
+                        def nowood():
+                            self.cooldownstate = True
+                            self.setText("not enough wood")
+                            time.sleep(1)
+                            self.setText("Sell Wood")
+                            self.cooldownstate = False
+                        Thread(target=nowood, daemon = True).start()
+                        return
 
+                case "Basic Axe":
+                    if "basic axe" not in inventory:
+                        inventory["basic axe"] = 1
+                        self.setText("Bought")
+                    else:
+                        def already():
+                            self.cooldownstate = True
+                            self.setText("You already have this")
+                            time.sleep(1)
+                            self.setText("Basic Axe")
+                            self.cooldownstate = False
+                        Thread(target=already, daemon = True).start()
+            
+
+                    
+                    
+                    
             if self.cooldown > 0:
+                
                 self.setText(str(self.cooldown))
                 self.qtimer.start()
-
+        
+    
     def timer(self):
         self.cooldownstate = True
         self.cooldown -= 1
