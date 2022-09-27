@@ -18,7 +18,7 @@ class Screen(QMainWindow):
         self.widgets = {
             "title": QLabel(self),
             "play": Button(self,0,"Play",(200,200))}
-
+        self.forest = "Oak Forest"
         self.widgets["title"].setPixmap(QPixmap("image.png"))
         self.widgets["title"].setFixedSize(450,200)
         self.widgets["title"].move(100,0)
@@ -28,12 +28,12 @@ class Screen(QMainWindow):
         self.reset = False
         if not self.mainscreenran:
             self.widgets = {
-                            
-                            "warmthmeter": Progressbar(self, (200,10),"Warmth"),
-                            "stoke fire" : Button(self,6,"Stoke Fire", (200,60)),
-                            "getwood" : Button(self,10,"Get Wood", (200,140)),
-                            "inventory" : Button(self,0,"Inventory", (200,220)),
-                            "shop": Button(self,0,"Shop",(200,300))
+                            "forest":Text(self,self.forest,(200,10),20)
+                            "warmthmeter": Progressbar(self, (200,60),"Warmth"),
+                            "stoke fire" : Button(self,6,"Stoke Fire", (200,110)),
+                            "getwood" : Button(self,10,"Get Wood", (200,190)),
+                            "inventory" : Button(self,0,"Inventory", (200,270)),
+                            "shop": Button(self,0,"Shop",(200,350))
                             }
             
             self.widglist = [value for value in self.widgets.values()]
@@ -62,11 +62,19 @@ class Screen(QMainWindow):
         self.clearscreen(remove=False)
         self.widgets["back"] = Button(self,0,"Back",(10,10))
         self.widgets["sell"] = Button(self,0,"Sell Wood",(10,520))
-        self.widgets["basic axe"] = Button(self,0,"Basic Axe",(200,100))
+        self.widgets["basic axe"] = Button(self,0,"Basic Axe",(10,100))
+        self.widgets["bronze axe"] = Button(self,0,"Bronze Axe",(120,100))
+        self.widgets["silver axe"] = Button(self,0,"Silver Axe",(10,180))
         for widget in ["back","sell"]:
             self.widgets[widget].show()
-        if inventory["gold"] >= 5:
+        if "Bronze Axe" in inventory:
+            self.widgets["silver axe"].show()
+        if "Basic Axe" in inventory:
+            self.widgets["bronze axe"].show()
             self.widgets["basic axe"].show()
+        elif inventory["gold"] >= 5:
+            self.widgets["basic axe"].show()
+        
 
 
 
@@ -229,18 +237,51 @@ class Button(QPushButton):
                         Thread(target=nowood, daemon = True).start()
                         return
 
-                case "Basic Axe":
-                    if "basic axe" not in inventory:
-                        inventory["basic axe"] = 1
+
+                case ("Basic Axe"|"Bronze Axe"|"Silver Axe"):
+                    if self.texte not in inventory:
+                        inventory[self.texte] = 1
                         self.setText("Bought")
+                        def nogold():
+                            self.cooldownstate = True
+                            self.setText("not enough gold")
+                            time.sleep(1)
+                            self.setText(self.texte)
+                            self.cooldownstate = False
+                        
+                        if self.texte == "Basic Axe":
+                            inventory["gold"] -= 5
+                        elif self.texte == "Bronze Axe":
+                            if inventory["gold"] >= 10:
+                                inventory["gold"] -= 10
+                            else:
+                                Thread(target=nogold, daemon = True).start()
+                        elif self.texte == "Silver Axe":
+                            if inventory["gold"] >= 20:
+                                inventory["gold"] -= 20
+                            else:
+                                Thread(target=nogold, daemon = True).start()
                     else:
                         def already():
                             self.cooldownstate = True
                             self.setText("You already have this")
                             time.sleep(1)
-                            self.setText("Basic Axe")
+                            self.setText(self.texte)
                             self.cooldownstate = False
                         Thread(target=already, daemon = True).start()
+            
+                # case "Basic Axe":
+                #     if "basic axe" not in inventory:
+                #         inventory["basic axe"] = 1
+                #         self.setText("Bought")
+                #     else:
+                #         def already():
+                #             self.cooldownstate = True
+                #             self.setText("You already have this")
+                #             time.sleep(1)
+                #             self.setText("Basic Axe")
+                #             self.cooldownstate = False
+                #         Thread(target=already, daemon = True).start()
             
 
                     
