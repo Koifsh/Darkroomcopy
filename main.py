@@ -28,7 +28,7 @@ class Screen(QMainWindow):
         self.reset = False
         if not self.mainscreenran:
             self.widgets = {
-                            "forest":Text(self,self.forest,(200,10),20)
+                            "forest":Text(self,self.forest,(200,10),20),
                             "warmthmeter": Progressbar(self, (200,60),"Warmth"),
                             "stoke fire" : Button(self,6,"Stoke Fire", (200,110)),
                             "getwood" : Button(self,10,"Get Wood", (200,190)),
