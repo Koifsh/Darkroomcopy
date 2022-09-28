@@ -5,7 +5,7 @@ import sys,time,csv
 from threading import Thread
 from functools import partial
 
-inventory = {"gold":0,"wood":0}
+inventory = {"gold":5,"wood":0}
 
 class Screen(QMainWindow):
     def __init__(self):
@@ -28,7 +28,7 @@ class Screen(QMainWindow):
         self.reset = False
         if not self.mainscreenran:
             self.widgets = {
-                            "forest":Text(self,self.forest,(200,10),20),
+                            "forest":Text(self,self.forest,(125,10),15),
                             "warmthmeter": Progressbar(self, (200,60),"Warmth"),
                             "stoke fire" : Button(self,6,"Stoke Fire", (200,110)),
                             "getwood" : Button(self,10,"Get Wood", (200,190)),
@@ -62,8 +62,8 @@ class Screen(QMainWindow):
         self.clearscreen(remove=False)
         self.widgets["back"] = Button(self,0,"Back",(10,10))
         self.widgets["sell"] = Button(self,0,"Sell Wood",(10,520))
-        self.widgets["basic axe"] = Button(self,0,"Basic Axe",(10,100))
-        self.widgets["bronze axe"] = Button(self,0,"Bronze Axe",(120,100))
+        self.widgets["basic axe"] = Button(self,0,"Basic Axe",(100,100))
+        self.widgets["bronze axe"] = Button(self,0,"Bronze Axe",(310,100))
         self.widgets["silver axe"] = Button(self,0,"Silver Axe",(10,180))
         for widget in ["back","sell"]:
             self.widgets[widget].show()
@@ -75,9 +75,6 @@ class Screen(QMainWindow):
         elif inventory["gold"] >= 5:
             self.widgets["basic axe"].show()
         
-
-
-
     def clearscreen(self,exceptions=[],remove = True):
         if remove:
             tempwidgets = dict(self.widgets)
@@ -92,13 +89,9 @@ class Screen(QMainWindow):
             for value in self.widgets.values():
                 value.hide()
                 
-            
     def mainloop(self):
         self.widgets["warmthmeter"].setValue(self.warmth)
         self.widgets["warmthmeter"].timer.start()
-            
-
-
 
 class Progressbar(QProgressBar):
     def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
