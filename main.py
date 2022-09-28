@@ -62,18 +62,9 @@ class Screen(QMainWindow):
         self.clearscreen(remove=False)
         self.widgets["back"] = Button(self,0,"Back",(10,10))
         self.widgets["sell"] = Button(self,0,"Sell Wood",(10,520))
-        self.widgets["basic axe"] = Button(self,0,"Basic Axe",(100,100))
-        self.widgets["bronze axe"] = Button(self,0,"Bronze Axe",(310,100))
-        self.widgets["silver axe"] = Button(self,0,"Silver Axe",(10,180))
-        for widget in ["back","sell"]:
+        self.widgets["upgrade axe"] = Button(self,0,"Axe",(100,100))
+        for widget in ["back","sell","upgrade axe"]:
             self.widgets[widget].show()
-        if "Bronze Axe" in inventory:
-            self.widgets["silver axe"].show()
-        if "Basic Axe" in inventory:
-            self.widgets["bronze axe"].show()
-            self.widgets["basic axe"].show()
-        elif inventory["gold"] >= 5:
-            self.widgets["basic axe"].show()
         
     def clearscreen(self,exceptions=[],remove = True):
         if remove:
@@ -170,6 +161,11 @@ class Button(QPushButton):
         self.setCursor(QCursor(Qt.PointingHandCursor))
         self.clicked.connect(self.clicker)
         self.qtimer.timeout.connect(self.timer)
+        
+        if text == "Axe":
+            axename= "Silver Axe" if "Bronze Axe" in inventory else "Bronze Axe" if "Basic Axe" in inventory else "Basic Axe"
+            cost = 20 if self.texte == "Silver Axe" else 10 if self.texte == "Bronze Axe" else 5
+            self.setText(f"{axename}: {cost}")
 
     def clicker(self):
         if  not self.cooldownstate:
@@ -231,61 +227,42 @@ class Button(QPushButton):
                         return
 
 
-                case ("Basic Axe"|"Bronze Axe"|"Silver Axe"):
-                    if self.texte not in inventory:
-                        inventory[self.texte] = 1
-                        self.setText("Bought")
-                        def nogold():
-                            self.cooldownstate = True
-                            self.setText("not enough gold")
-                            time.sleep(1)
-                            self.setText(self.texte)
-                            self.cooldownstate = False
+                case "Axe":
+                    axename= "Silver Axe" if "Bronze Axe" in inventory else "Bronze Axe" if "Basic Axe" in inventory else "Basic Axe"
+                    cost = 20 if self.texte == "Silver Axe" else 10 if self.texte == "Bronze Axe" else 5
+                    self.setText(f"{axename}: {cost}")
+                    
+                    def nogold():
+                        self.cooldownstate = True
+                        self.setText("not enough gold")
+                        time.sleep(1)
+                        self.setText(f"{axename}: {cost}")
+                        self.cooldownstate = False
                         
-                        if self.texte == "Basic Axe":
-                            inventory["gold"] -= 5
-                        elif self.texte == "Bronze Axe":
-                            if inventory["gold"] >= 10:
-                                inventory["gold"] -= 10
-                            else:
-                                Thread(target=nogold, daemon = True).start()
-                        elif self.texte == "Silver Axe":
-                            if inventory["gold"] >= 20:
-                                inventory["gold"] -= 20
-                            else:
-                                Thread(target=nogold, daemon = True).start()
+                    if inventory["gold"] < cost:
+                        print("no gold")
+                        Thread(target=nogold, daemon = True).start()
                     else:
-                        def already():
+                        print("gold")
+                        inventory[axename] = 1
+                        inventory["gold"] -= cost
+                        def bought():
                             self.cooldownstate = True
-                            self.setText("You already have this")
+                            self.setText("Bought")
                             time.sleep(1)
-                            self.setText(self.texte)
+                            axename= "Silver Axe" if "Bronze Axe" in inventory else "Bronze Axe" if "Basic Axe" in inventory else "Basic Axe"
+                            cost = 20 if self.texte == "Silver Axe" else 10 if self.texte == "Bronze Axe" else 5
+                            self.setText(f"{axename}: {cost}")
                             self.cooldownstate = False
-                        Thread(target=already, daemon = True).start()
-            
-                # case "Basic Axe":
-                #     if "basic axe" not in inventory:
-                #         inventory["basic axe"] = 1
-                #         self.setText("Bought")
-                #     else:
-                #         def already():
-                #             self.cooldownstate = True
-                #             self.setText("You already have this")
-                #             time.sleep(1)
-                #             self.setText("Basic Axe")
-                #             self.cooldownstate = False
-                #         Thread(target=already, daemon = True).start()
-            
-
-                    
-                    
-                    
+                        Thread(target=bought, daemon = True).start()
+                        
             if self.cooldown > 0:
                 
                 self.setText(str(self.cooldown))
                 self.qtimer.start()
         
-    
+
+        
     def timer(self):
         self.cooldownstate = True
         self.cooldown -= 1
