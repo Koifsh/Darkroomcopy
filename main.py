@@ -5,7 +5,7 @@ import sys,time,csv
 from threading import Thread
 from functools import partial
 
-inventory = {"gold":5,"wood":0}
+inventory = {"gold":35,"wood":0}
 
 class Screen(QMainWindow):
     def __init__(self):
@@ -212,9 +212,11 @@ class Button(QPushButton):
                     if inventory["gold"] < self.cost:
                         print("no gold")
                         self.notice(1,"Not Enough Gold",f"{self.axename}: {self.cost}")
+                        
                     else:
                         print("gold")
                         inventory[self.axename] = 1
+                        self.win.widgets["getwood"].orgcooldown -= 2
                         inventory["gold"] -= self.cost
                         self.getItem("Axe")
                         self.notice(0.5,"Bought",f"{self.axename}: {self.cost}")
@@ -225,7 +227,10 @@ class Button(QPushButton):
         
     def getItem(self,type):
         if type == "Axe":
-            self.axename= "Silver Axe" if "Bronze Axe" in inventory else "Bronze Axe" if "Basic Axe" in inventory else "Basic Axe"
+            for i in ("Basic Axe", "Bronze Axe", "Silver Axe","Max"):
+                if i not in inventory:
+                    self.axename = i
+                    break
             self.cost = 20 if self.axename == "Silver Axe" else 10 if self.axename == "Bronze Axe" else 5
         
     def notice(self, sleeptime, message, orgmessage):
