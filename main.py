@@ -5,7 +5,7 @@ import sys,time,csv
 from threading import Thread
 from functools import partial
 
-inventory = {"gold":35,"wood":0}
+inventory = {"gold":75,"wood":0}
 
 class Screen(QMainWindow):
     def __init__(self):
@@ -163,8 +163,7 @@ class Button(QPushButton):
         self.qtimer.timeout.connect(self.timer)
         
         if text == "Axe":
-            self.getItem("Axe")
-            self.setText(f"{self.axename}: {self.cost}")
+            self.setText(self.getItem("Axe"))
 
     def clicker(self):
         if  not self.cooldownstate:
@@ -176,7 +175,6 @@ class Button(QPushButton):
                     else:
                         self.notice(1,"Not Enough Wood",self.texte)
                         
-
                 case "Inventory":
                     self.win.inventoryscreen()
 
@@ -206,20 +204,19 @@ class Button(QPushButton):
                         self.notice(1,"Not Enough Wood",self.texte)
 
                 case "Axe":
-                    self.getItem("Axe")
-                    self.setText(f"{self.axename}: {self.cost}")
-                        
-                    if inventory["gold"] < self.cost:
-                        print("no gold")
-                        self.notice(1,"Not Enough Gold",f"{self.axename}: {self.cost}")
-                        
+                    self.setText(self.getItem("Axe"))
+                    print(inventory)
+                    if self.axename == "Max":
+                        self.notice(0.5,"Max Upgrade Reached","Max")
+                    
+                    elif inventory["gold"] < self.cost:
+                        self.notice(1,"Not Enough Gold",self.getItem("Axe"))
+
                     else:
-                        print("gold")
                         inventory[self.axename] = 1
                         self.win.widgets["getwood"].orgcooldown -= 2
                         inventory["gold"] -= self.cost
-                        self.getItem("Axe")
-                        self.notice(0.5,"Bought",f"{self.axename}: {self.cost}")
+                        self.notice(0.5,"Bought",self.getItem("Axe"))
                         
             if self.cooldown > 0:
                 self.setText(str(self.cooldown))
@@ -227,11 +224,16 @@ class Button(QPushButton):
         
     def getItem(self,type):
         if type == "Axe":
-            for i in ("Basic Axe", "Bronze Axe", "Silver Axe","Max"):
+            for index,i in enumerate(["Basic Axe", "Bronze Axe", "Silver Axe","Max"]):
                 if i not in inventory:
                     self.axename = i
-                    break
-            self.cost = 20 if self.axename == "Silver Axe" else 10 if self.axename == "Bronze Axe" else 5
+                    self.cost = 5 * (2 ** index)
+                    if self.axename != "Max":
+                        return f"{self.axename}: {self.cost}"
+                    else:
+                        self.cooldownstate = True
+                        return "Max"
+                        
         
     def notice(self, sleeptime, message, orgmessage):
         def noticethread():
