@@ -4,7 +4,15 @@ from PyQt5.QtCore import *
 import sys,time
 from threading import Thread
 
-order = {}
+order = {"starters":{
+            "Halloumi Sticks":{
+                "cost":4.25,
+                "amount":0},
+            "Spicy Mixed Olives":{
+                "cost":3.75,
+                "amount":0},},
+        "chicken":{},
+        "burgers":{}}
 
 class Screen(QMainWindow):
     def __init__(self):
@@ -29,10 +37,16 @@ class Screen(QMainWindow):
     def starterscreen(self):
         self.widgets = {
             "back" : Button(self,"Back",(10,10),(100,70)),
-            "title" : Text(self,"Nando's starters",(225,10),15),
-            "halloumi": Button(self,"Halloumi sticks: £4.25",(200,60))
+            "title" : Text(self,"Nando's starters                          Amount",(225,10),15),
             
         }
+        count = 0
+        for item,value in order["starters"].items():
+            self.widgets[item] = Button(self,f"{item}: £{value['cost']}",(200,60 + 80*count))
+            self.widgets[f"{item} amount"] = Text(self, order["starters"][item]["amount"])
+            count += 1
+
+
         for value in self.widgets.values():
             value.show()
     
@@ -55,7 +69,7 @@ class Text(QLabel):
     def __init__(self,window, text,pos,size):
         super().__init__(text,window)
         self.move(*pos)
-        self.setAlignment(Qt.AlignCenter)
+        self.setAlignment(Qt.AlignVCenter)
         self.setStyleSheet(
             "*{"+
             f'''color: white;
@@ -64,7 +78,7 @@ class Text(QLabel):
             padding: 15px 0;
             margin-top: 20px'''
             +"}")
-        self.setFixedSize(size*10,size+23)    
+        self.setFixedSize(size*len(text),size+23)    
              
 
 class Button(QPushButton):
@@ -111,6 +125,15 @@ class Button(QPushButton):
                 case "Back":
                     self.win.clearscreen()
                     self.win.mainscreen()
+                case _:
+                    name = self.message.split(":")[0]
+                    for course,item in order.items():
+                        for dish in item.keys():
+                            if name == dish:
+                                order[course][dish]["amount"] += 1
+                                break
+                            
+
 
     def notice(self, sleeptime, message, orgmessage):
         def noticethread():
