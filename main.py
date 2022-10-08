@@ -18,7 +18,8 @@ class Screen(QMainWindow):
         self.widgets = {
             "title": QLabel(self),
             "play": Button(self,0,"Play",(200,200))}
-        self.forest = "Oak Forest"
+        self.forests = ["Oak Forest","Spruce Forest","Max"]
+        self.forestlevel = 0
         self.widgets["title"].setPixmap(QPixmap("image.png"))
         self.widgets["title"].setFixedSize(450,200)
         self.widgets["title"].move(100,0)
@@ -28,7 +29,7 @@ class Screen(QMainWindow):
         self.reset = False
         if not self.mainscreenran:
             self.widgets = {
-                            "forest":Text(self,self.forest,(125,10),15),
+                            "forest":Text(self,self.forests[self.forestlevel],(125,10),15),
                             "warmthmeter": Progressbar(self, (200,60),"Warmth"),
                             "stoke fire" : Button(self,6,"Stoke Fire", (200,110)),
                             "getwood" : Button(self,10,"Get Wood", (200,190)),
@@ -63,7 +64,8 @@ class Screen(QMainWindow):
         self.widgets["back"] = Button(self,0,"Back",(10,10))
         self.widgets["sell"] = Button(self,0,"Sell Wood",(10,520))
         self.widgets["upgrade axe"] = Button(self,0,"Axe",(100,100))
-        for widget in ["back","sell","upgrade axe"]:
+        self.widgets["upgrade forest"] = Button(self,0,"Forest",(390,520))
+        for widget in ["back","sell","upgrade axe","upgrade forest"]:
             self.widgets[widget].show()
         
     def clearscreen(self,exceptions=[],remove = True):
@@ -164,7 +166,11 @@ class Button(QPushButton):
         
         if text == "Axe":
             self.setText(self.getItem("Axe"))
-
+        elif text == "Forest":
+            if self.win.forests[self.win.forestlevel + 1] == "Max":
+                self.setText("Max Forest")
+            else:
+                self.setText(f"Upgrade Forest: {10 + 10*self.win.forestlevel}")
     def clicker(self):
         if  not self.cooldownstate:
             match self.texte:
@@ -196,9 +202,10 @@ class Button(QPushButton):
                 
                 case "Sell Wood":
                     if inventory["wood"] > 0:
+                        gold = 2 ** self.win.forestlevel
                         inventory["wood"] -= 1
-                        inventory["gold"] += 1
-                        self.notice(0.5,"Gold + 1",self.texte)
+                        inventory["gold"] += gold
+                        self.notice(0.5,f"Gold + {gold}",self.texte)
                         
                     else:
                         self.notice(1,"Not Enough Wood",self.texte)
@@ -217,7 +224,17 @@ class Button(QPushButton):
                         self.win.widgets["getwood"].orgcooldown -= 2
                         inventory["gold"] -= self.cost
                         self.notice(0.5,"Bought",self.getItem("Axe"))
-                        
+                
+                case "Forest":
+                    if self.win.forests[self.win.forestlevel + 1] == "Max":
+                        self.notice(0.5,"Max Forest Reached","Max Forest")
+                    else:
+                        self.win.forestlevel += 1
+                        if self.win.forests[self.win.forestlevel + 1] == "Max":
+                            self.notice(0.5,"Max Forest Reached","Max Forest")
+                        else:
+                            self.notice(0.5,"Forest Upgraded",f"Upgrade Forest: {10 + 10*self.win.forestlevel}")
+                    
             if self.cooldown > 0:
                 self.setText(str(self.cooldown))
                 self.qtimer.start()
