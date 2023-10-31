@@ -9,6 +9,7 @@ class Button(QPushButton):
         super().__init__(text, window)
         self.win = window  # setting the window as a class variable
         self.func = func
+        self.orgmessage = text
         if pos is not None: #Move the button if the position argument is specified
             self.move(*pos)
         self.setFixedSize(*size)
@@ -29,17 +30,35 @@ class Button(QPushButton):
         ''')
         if self.func == None:
             print("Function not Entered")
-        elif self.func != window.deleterow:
-            self.clicked.connect(self.func)
+    
+    def cooldownTik(self, sleepLeft):
+        self.setText(f"{self.orgmessage} : {float(sleepLeft)}")
+        palette = self.palette()
+        rect = QRectF(self.lineedit.rect())
+        gradient = QLinearGradient(rect.topLeft(), rect.topRight())
+        gradient.setColorAt(sleepLeft-0.001, QColor('#161219'))
+        gradient.setColorAt(sleepLeft, QColor('#737373'))
+        gradient.setColorAt(sleepLeft+0.001,QColor('#737373'))
+        palette.setBrush(QPalette.Base, QBrush(gradient))
+        self.setPalette(palette)
+    
+    def on_Cooldown(self, sleeptime):
+        self.worker = CooldownThread(sleeptime, emitprogress = True)
+        self.worker.start()
+        self.setEnabled(False)
+        self.worker.progress.connect(self.cooldownTik)
+        self.worker.finished.connect(lambda: self.setEnabled(True))
+        self.worker.finished.connect(lambda: self.setText(self.orgmessage))
+        
 
-    def notice(self, sleeptime, message, orgmessage): # Gives the user a brief idea of what the button has just done
+    def notice(self, sleeptime, message): # Gives the user a brief idea of what the button has just done
          #daemon thread allows the rest of the screen to function while the message is being displayed
         self.worker = CooldownThread(sleeptime)
         self.worker.start()
         self.setEnabled(False)
         self.setText(message)
         self.worker.finished.connect(lambda: self.setEnabled(True))
-        self.worker.finished.connect(lambda: self.setText(orgmessage))
+        self.worker.finished.connect(lambda: self.setText(self.orgmessage))
 
 class CooldownThread(QThread):
     progress = pyqtSignal(int)
@@ -51,9 +70,9 @@ class CooldownThread(QThread):
         if not self.emitprogress:
             sleep(self.sleeptime)
         else:
-            for i in range(self.sleeptime):
-                sleep(1)
-                self.progress.emit(i)
+            for i in range(self.sleeptime*10):
+                sleep(0.1)
+                self.progress.emit(self.sleeptime - i/10)
 
 
 class LineEdit(QLineEdit):
@@ -199,4 +218,27 @@ class Scrollbox:
     def setParent(self,_):
         self.workoutbox.setParent(None)
         self.scroll.setParent(None)
-    
+
+class Progressbar(QProgressBar):
+    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
+        super().__init__(window)
+        self.win = window
+        self.setMinimum(min)
+        self.setMaximum(max)
+        self.move(*pos)
+        self.setFixedSize(200,30)
+        self.setFormat(text)
+        self.setStyleSheet("QProgressBar {"
+                           f"background-color: {backgroundcolor};"
+                           "color: white;"
+                           "border-color: orange;"
+                           "border-radius: 2px;"
+                           "text-align: center; }"
+
+                           "QProgressBar::chunk {"
+                           "border-radius: 2px;"
+                           f"background-color: {barcolor};"+"}")
+        
+        self.timer = QTimer()
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(quit)
