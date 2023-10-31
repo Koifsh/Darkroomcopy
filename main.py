@@ -1,10 +1,8 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import sys,time,csv
-from threading import Thread
-from functools import partial
-
+from tools import *
+import sys
 inventory = {"gold":75,"wood":0}
 
 class Screen(QMainWindow):
@@ -86,36 +84,7 @@ class Screen(QMainWindow):
         self.widgets["warmthmeter"].setValue(self.warmth)
         self.widgets["warmthmeter"].timer.start()
 
-class Progressbar(QProgressBar):
-    def __init__(self,window, pos,text= "", backgroundcolor = "orange", barcolor = "red", min = 0, max = 100):
-        super().__init__(window)
-        self.win = window
-        self.setMinimum(min)
-        self.setMaximum(max)
-        self.move(*pos)
-        self.setFixedSize(200,30)
-        self.setFormat(text)
-        self.setStyleSheet("QProgressBar {"
-                           f"background-color: {backgroundcolor};"
-                           "color: white;"
-                           "border-color: orange;"
-                           "border-radius: 2px;"
-                           "text-align: center; }"
 
-                           "QProgressBar::chunk {"
-                           "border-radius: 2px;"
-                           f"background-color: {barcolor};"+"}")
-        
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.counter)
-        
-    def counter(self):
-        self.win.warmth -= 2
-        self.setValue(self.win.warmth)
-        self.update()
-        if self.win.warmth == 0:
-            self.win.close()
 
 class Text(QLabel):
     def __init__(self,window, text,pos,size):
@@ -252,14 +221,7 @@ class Button(QPushButton):
                         return "Max"
                         
         
-    def notice(self, sleeptime, message, orgmessage):
-        def noticethread():
-            self.cooldownstate = True
-            self.setText(message)
-            time.sleep(sleeptime)
-            self.setText(orgmessage)
-            self.cooldownstate = False
-        Thread(target=noticethread, daemon = True).start()
+
         
     def timer(self):
         self.cooldownstate = True
