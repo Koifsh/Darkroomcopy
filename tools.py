@@ -1,10 +1,7 @@
-import typing
-from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from time import sleep
-from threading import Thread
 
 class Button(QPushButton):
     #Here I have taken window as an argument to stop cyclical imports
@@ -57,6 +54,7 @@ class CooldownThread(QThread):
             for i in range(self.sleeptime):
                 sleep(1)
                 self.progress.emit(i)
+
 
 class LineEdit(QLineEdit):
     def __init__(self,window,text,pos,size=(200,50)):
