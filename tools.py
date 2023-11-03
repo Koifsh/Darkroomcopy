@@ -263,6 +263,7 @@ class Progressbar(QProgressBar):
         self.win = window
         self.setMinimum(min)
         self.setMaximum(max)
+        self.setValue(max)
         self.move(*pos)
         self.setFixedSize(200,30)
         self.setFormat(text)

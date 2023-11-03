@@ -45,6 +45,7 @@ class Screen(QMainWindow):
                         "inventory" : Button(self,"Inventory", (200,270),func=self.inventoryscreen),
                         "shop": Button(self,"Shop",(200,350),func=self.shopscreen),
         }
+        
         if not self.mainloopran:
             self.warmthtimer.start()
             self.mainloopran = True
