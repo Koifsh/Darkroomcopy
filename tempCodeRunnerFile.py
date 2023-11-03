@@ -1,1 +1,1 @@
-setValue
+cost

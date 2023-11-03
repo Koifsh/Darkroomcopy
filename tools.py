@@ -35,7 +35,10 @@ class Button(QPushButton):
         
     
     def cooldownTik(self, sleepLeft):
-        self.setText(f"{self.orgmessage} : {(float(sleepLeft)):.1f}")
+        if self.cooldowntext == None:
+            self.setText(f"{self.orgmessage} : {(float(sleepLeft)):.1f}")
+        else:
+            self.setText(self.cooldowntext)
         if sleepLeft <= 0:
             return
         percent = sleepLeft/ self.sleeptime
@@ -51,25 +54,25 @@ class Button(QPushButton):
             }   
             ''')
 
-    def resetStyleSheet(self):
+    def resetStyleSheet(self, fontcolor = "white", hover = True):
         self.setStyleSheet(
         #Setting the style of the button
         '''
         QPushButton {'''+
-        f"border: 4px solid {self.color};" +'''
-        color: white;
-        font-family: shanti;'''+
+        f"border: 4px solid {self.color};" +
+        f"color: {fontcolor};" +
+        'font-family: shanti;'+
         f"font-size: {self.textsize}px;" +'''
         border-radius: 4px;
         margin-top: 0px}
-        
+        ''' + ('' if not hover else'''
         QPushButton::hover{
             background: #737373;
         }
-        ''')
+        '''))
 
-    def on_Cooldown(self, sleeptime):
-        print("on cooldown")
+    def on_Cooldown(self, sleeptime, cooldowntext = None):
+        self.cooldowntext = cooldowntext
         self.sleeptime = sleeptime
         self.worker = CooldownThread(sleeptime, emitprogress = True)
         self.worker.start()
@@ -80,7 +83,7 @@ class Button(QPushButton):
         self.worker.finished.connect(self.resetStyleSheet)
         
 
-    def notice(self, sleeptime, message): # Gives the user a brief idea of what the button has just done
+    def notice(self, sleeptime, message, newmessage = None): # Gives the user a brief idea of what the button has just done
          #daemon thread allows the rest of the screen to function while the message is being displayed
         self.sleeptime = sleeptime
         self.worker = CooldownThread(self.sleeptime)
@@ -88,7 +91,7 @@ class Button(QPushButton):
         self.setEnabled(False)
         self.setText(message)
         self.worker.finished.connect(lambda: self.setEnabled(True))
-        self.worker.finished.connect(lambda: self.setText(self.orgmessage))
+        self.worker.finished.connect(lambda: self.setText(newmessage if newmessage else self.orgmessage))
 
 class CooldownThread(QThread):
     progress = pyqtSignal(float)
@@ -133,9 +136,10 @@ class LineEdit(QLineEdit):
         )
         
 class Text(QLabel):
-    def __init__(self,window,text,pos,size):
+    def __init__(self,window,text,pos=None,size=15):
         super().__init__(text,window)
-        self.move(*pos)
+        if pos != None:
+            self.move(*pos)
         self.setAlignment(Qt.AlignVCenter) # changes the alignment to the center of the widget
         self.setStyleSheet( # sets the style of the text
             "*{"+
@@ -214,6 +218,7 @@ class dropdownbox(QComboBox):
 
 class Scrollbox:
     def __init__(self,window,pos,size):
+        self.window = window
         self.workoutbox = QGroupBox(window)
         self.scroll = QScrollArea(window)
         self.layout = QFormLayout()
@@ -243,11 +248,13 @@ class Scrollbox:
     QScrollBar::add-line:vertical{height: 0px;}
     QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical{background: none;}
     QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical{background: none;}""")
-        self.scrollwidglist = []
-        self.layout.addRow(Button(window,"add row",None,(100,50),window.addrow))
         self.workoutbox.setLayout(self.layout)
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.workoutbox)
+    
+    def addText(self,list):
+        for i in list:
+            self.layout.addWidget(Text(self.window,i,size=15))
         
     def show(self):
         self.workoutbox.show()
