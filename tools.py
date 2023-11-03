@@ -9,6 +9,7 @@ class Button(QPushButton):
         super().__init__(text, window)
         self.win = window  # setting the window as a class variable
         self.func = func
+        self.color, self.textsize = color, text_size
         self.orgmessage = text
         if pos is not None: #Move the button if the position argument is specified
             self.move(*pos)
@@ -30,30 +31,59 @@ class Button(QPushButton):
         ''')
         if self.func == None:
             print("Function not Entered")
+        self.clicked.connect(self.func)
+        
     
     def cooldownTik(self, sleepLeft):
-        self.setText(f"{self.orgmessage} : {float(sleepLeft)}")
-        palette = self.palette()
-        rect = QRectF(self.lineedit.rect())
-        gradient = QLinearGradient(rect.topLeft(), rect.topRight())
-        gradient.setColorAt(sleepLeft-0.001, QColor('#161219'))
-        gradient.setColorAt(sleepLeft, QColor('#737373'))
-        gradient.setColorAt(sleepLeft+0.001,QColor('#737373'))
-        palette.setBrush(QPalette.Base, QBrush(gradient))
-        self.setPalette(palette)
-    
+        self.setText(f"{self.orgmessage} : {(float(sleepLeft)):.1f}")
+        if sleepLeft <= 0:
+            return
+        percent = sleepLeft/ self.sleeptime
+        self.setStyleSheet("""
+            QPushButton {"""+
+            f'background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop: 0 {self.color}, stop: ' + str(percent) +f' {self.color}, stop: ' + str(percent+ 0.001) + '#161219, stop: 1 #161219);' +
+            f"border: 4px solid {self.color};" +'''
+            color: white;
+            font-family: shanti;'''+
+            f"font-size: {self.textsize}px;" +'''
+            border-radius: 4px;
+            margin-top: 0px
+            }   
+            ''')
+
+    def resetStyleSheet(self):
+        self.setStyleSheet(
+        #Setting the style of the button
+        '''
+        QPushButton {'''+
+        f"border: 4px solid {self.color};" +'''
+        color: white;
+        font-family: shanti;'''+
+        f"font-size: {self.textsize}px;" +'''
+        border-radius: 4px;
+        margin-top: 0px}
+        
+        QPushButton::hover{
+            background: #737373;
+        }
+        ''')
+
     def on_Cooldown(self, sleeptime):
+        print("on cooldown")
+        self.sleeptime = sleeptime
         self.worker = CooldownThread(sleeptime, emitprogress = True)
         self.worker.start()
         self.setEnabled(False)
         self.worker.progress.connect(self.cooldownTik)
         self.worker.finished.connect(lambda: self.setEnabled(True))
         self.worker.finished.connect(lambda: self.setText(self.orgmessage))
+        self.worker.finished.connect(self.resetStyleSheet)
         
 
     def notice(self, sleeptime, message): # Gives the user a brief idea of what the button has just done
          #daemon thread allows the rest of the screen to function while the message is being displayed
-        self.worker = CooldownThread(sleeptime)
+        self.sleeptime = sleeptime
+        self.worker = CooldownThread(self.sleeptime)
         self.worker.start()
         self.setEnabled(False)
         self.setText(message)
@@ -61,18 +91,26 @@ class Button(QPushButton):
         self.worker.finished.connect(lambda: self.setText(self.orgmessage))
 
 class CooldownThread(QThread):
-    progress = pyqtSignal(int)
+    progress = pyqtSignal(float)
+    finished = pyqtSignal()
     def __init__(self,sleeptime, emitprogress = False):
+        print("cooldown initialized")
+        super().__init__()
         self.sleeptime = sleeptime
         self.emitprogress = emitprogress
         
     def run(self):
+        print("ran beginning")        
         if not self.emitprogress:
             sleep(self.sleeptime)
         else:
-            for i in range(self.sleeptime*10):
+            slept = 0
+            while slept < self.sleeptime:
                 sleep(0.1)
-                self.progress.emit(self.sleeptime - i/10)
+                slept += 0.1
+                self.progress.emit(self.sleeptime - slept)
+        
+        self.finished.emit()
 
 
 class LineEdit(QLineEdit):
@@ -239,6 +277,3 @@ class Progressbar(QProgressBar):
                            "border-radius: 2px;"
                            f"background-color: {barcolor};"+"}")
         
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(quit)

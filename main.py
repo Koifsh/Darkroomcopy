@@ -12,11 +12,14 @@ class Screen(QMainWindow):
         self.setWindowTitle("DONT LET THE COLD GET TO YOU")
         self.setStyleSheet("background: #161219;")
         self.warmth = 100
+        self.mainloopran = False
+        self.warmthtimer = QTimer()
+        self.warmthtimer.setInterval(2000)
+        self.warmthtimer.timeout.connect(self.mainloop)
         self.widgets = {
             "title": QLabel(self),
             "play": Button(self,"Play",(200,200),func=self.mainscreen)
             }
-        self.widgets["play"].clicked.connect(self.mainloop())
         self.forests = ["Oak Forest","Spruce Forest","Max"]
         self.forestlevel = 0
         self.widgets["title"].setPixmap(QPixmap("image.png"))
@@ -42,6 +45,9 @@ class Screen(QMainWindow):
                         "inventory" : Button(self,"Inventory", (200,270),func=self.inventoryscreen),
                         "shop": Button(self,"Shop",(200,350),func=self.shopscreen),
         }
+        if not self.mainloopran:
+            self.warmthtimer.start()
+            self.mainloopran = True
     #MAINSCREEN BUTTON FUNCS
     def stokeFire(self):
         if inventory["wood"] > 0:
@@ -49,6 +55,7 @@ class Screen(QMainWindow):
             self.warmth = 100
         else:
             self.widgets["stoke fire"].notice(1,"Not Enough Wood")
+            return
         self.widgets["stoke fire"].on_Cooldown(5)
         
             
@@ -62,10 +69,8 @@ class Screen(QMainWindow):
         
     @screen
     def inventoryscreen(self):
-        self.widgets = {
-            {"back": Button(self,"Back",(10,10),func=self.mainscreen)} | 
-            {key : Text(self,f"{key} : {value}",(150,50+25*index),10) for index,(key,value) in enumerate(inventory.items())}
-            }
+        self.widgets = {"back": Button(self,"Back",(10,10),func=self.mainscreen)} | {key : Text(self,f"{key} : {value}",(150,50+25*index),10) for index,(key,value) in enumerate(inventory.items())}
+            
 
     @screen
     def shopscreen(self):
@@ -73,7 +78,7 @@ class Screen(QMainWindow):
             "back":Button(self,"Back",(10,10),func=self.mainscreen),
             "sellwood" : Button(self,"Sell Wood",(10,520),func=self.sellWood),
             "upgrade axe": Button(self,"Axe",(100,100),func=self.getAxe),
-            "upgrade forest" : Button(self,0,"Forest",(390,520))
+            "upgrade forest" : Button(self,"Forest",(390,520),func=self.forest)
         }
     
     def sellWood(self):
@@ -93,11 +98,20 @@ class Screen(QMainWindow):
             self.notice(0.5,"Max Upgrade Reached","Max")
     
 
+
+    def forest(self):
+        if self.forests[self.forestlevel + 1] == "Max":
+            self.widgets["upgrade forest"].notice(0.5,"Max Forest Reached","Max Forest")
+        else:
+            self.forestlevel += 1
+            if self.forests[self.forestlevel + 1] == "Max":
+                self.widgets["upgrade forest"].notice(0.5,"Max Forest Reached","Max Forest")
+            else:
+                self.widgets["upgrade forest"].notice(0.5,"Forest Upgraded",f"Upgrade Forest: {10 + 10*self.forestlevel}")
+        
     
-    #
     
-    
-    def getAxe(self,type):
+    def getAxe(self):
         for index,i in enumerate(["Basic Axe", "Bronze Axe", "Silver Axe","Max"]):
             if i not in inventory:
                 self.axename = i
@@ -109,8 +123,10 @@ class Screen(QMainWindow):
                     return "Max"
             
     def mainloop(self):
+        self.warmth -= 8
         self.widgets["warmthmeter"].setValue(self.warmth)
-        self.widgets["warmthmeter"].timer.start()
+        self.widgets["warmthmeter"].show()
+        
         
     def clearscreen(self):# This clears the screen and ensures that it has been deleted from the widget dictionary
         print("screen cleared")
@@ -126,36 +142,7 @@ class Screen(QMainWindow):
 
              
 
-                    
-
-            #     case "Axe":
-            #         self.setText(self.getItem("Axe"))
-            #         print(inventory)
-            #         if self.axename == "Max":
-            #             self.notice(0.5,"Max Upgrade Reached","Max")
-                    
-            #         elif inventory["gold"] < self.cost:
-            #             self.notice(1,"Not Enough Gold",self.getItem("Axe"))
-
-            #         else:
-            #             inventory[self.axename] = 1
-            #             self.win.widgets["getwood"].orgcooldown -= 2
-            #             inventory["gold"] -= self.cost
-            #             self.notice(0.5,"Bought",self.getItem("Axe"))
                 
-            #     case "Forest":
-            #         if self.win.forests[self.win.forestlevel + 1] == "Max":
-            #             self.notice(0.5,"Max Forest Reached","Max Forest")
-            #         else:
-            #             self.win.forestlevel += 1
-            #             if self.win.forests[self.win.forestlevel + 1] == "Max":
-            #                 self.notice(0.5,"Max Forest Reached","Max Forest")
-            #             else:
-            #                 self.notice(0.5,"Forest Upgraded",f"Upgrade Forest: {10 + 10*self.win.forestlevel}")
-                    
-            # if self.cooldown > 0:
-            #     self.setText(str(self.cooldown))
-            #     self.qtimer.start()
         
 
 if __name__ == "__main__":
